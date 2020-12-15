@@ -500,6 +500,7 @@ void InvAES_Cipher(unsigned char *input, unsigned char *output)
 
 string get_input_from_keyboard()
 {
+  cout << "Ban ro: ";
   string input;
   cin >> input;
   return input;
@@ -520,7 +521,9 @@ int main()
 {
   unsigned char pBlock[100][16], cBlock[100][16], bdich[16], bma[16];
   unsigned char khoa[32]; /* 256 bit */
+  unsigned char testvectors1[16] = {0xdc, 0x95, 0xc0, 0x78, 0xa2, 0x40, 0x89, 0x89, 0xad, 0x48, 0xa2, 0x14, 0x92, 0x84, 0x20, 0x87};
   unsigned char testvectors2[16] = {0xdc, 0x95, 0xc0, 0x78, 0xa2, 0x40, 0x89, 0x89, 0xad, 0x48, 0xa2, 0x14, 0x92, 0x84, 0x20, 0x87};
+   
   int k;
 
   string ban_ro, ban_ma, ban_dich;
@@ -548,6 +551,15 @@ int main()
     break;
   }
 
+  int mode;
+  do{
+    cout << "Hay chon che do ma!!!\n";
+    cout << "1: ECB\n";
+    cout << "2: CBC\n";
+    cout << "3: CFB\n";
+    cin >> mode;
+  }while (mode <1 || mode >3);
+  
   int i = 0, dem = 1;
   while (i < ban_ro.size())
   {
@@ -563,6 +575,15 @@ int main()
         bro[j] = ban_ro[i + j];
       }
     }
+
+    if (mode == 2) // neu mode = CBC thi to hop khoi ro bang plaintex xor vector khoi tao.
+    {
+      for (int j = 0; j < 16; j++)
+      {
+        bro[j] = bro[j] ^ testvectors2[j];
+      }
+    }
+    
 
     /* Khoa ma/dich - 128 bit */
     for (int i = 0; i < 16; i++)
@@ -583,8 +604,19 @@ int main()
     /* 3. Goi ham ma */
     printf("\nStarting Encrypt...");
 
-    AES_Cipher(bro, bma);
-
+    if (mode == 3) // chế độ mã CFB, mã hóa vector khởi tạo với khóa K, sau đó cộng module2 với plaintext.
+    {
+      AES_Cipher(testvectors2, bma);
+      for (int j = 0; j < 16; j++)
+      {
+        bma[j] = bma[j] ^ bro[j]; // phép cộng module 2
+      }
+      copy(begin(bma), end(bma), testvectors2); // Lấy kết quả của bản mã để làm vector khởi tạo cho khối sau.
+    } else
+    {
+      AES_Cipher(bro, bma);
+    }
+    
     /* In ket qua ma */
     printf("\nKhoi ban ma thu %d : ", dem);
     for (int i = 0; i < 16; i++)
@@ -593,6 +625,10 @@ int main()
     for (int j = 0; j < 16; j++)
     {
       ban_ma += bma[j];
+
+      if(mode==2){ // Che do ma CBC thi lay ban ma khoi truoc lam vector khoi tao cua khoi sau
+        testvectors2[j] = bma[j];
+      }
     }
     i += 16;
     dem++;
@@ -626,7 +662,27 @@ int main()
     /* 2. Thiet lap khoa con */
     KeyExpantion(khoa, w);
     /* 3. Goi ham giai ma*/
-    InvAES_Cipher(bma, bdich);
+    if (mode ==3) // chế độ mã CFB
+    {
+      AES_Cipher(testvectors1, bdich);
+      for (int j = 0; j < 16; j++)
+      {
+        bdich[j] = bdich[j] ^ bma[j];
+      }
+      copy(begin(bma), end(bma), testvectors1);
+    } else
+    {
+      InvAES_Cipher(bma, bdich);
+    }
+
+    if (mode ==2) // mode cbc thi sau khi giai ma, phai ^ vector khoi tao
+    {
+      for (int j = 0; j < 16; j++)
+      {
+        bdich[j] = bdich[j] ^ testvectors1[j];
+      }
+      copy(begin(bma), end(bma), testvectors1); // dung ban ma cua khoi truoc lam vector khoi tao cua khoi sau.
+    }
 
     /* In ket qua dich */
     printf("\nKhoi ban dich thu %d: ", dem);
