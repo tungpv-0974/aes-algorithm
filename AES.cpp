@@ -502,7 +502,9 @@ string get_input_from_keyboard()
 {
   cout << "Ban ro: ";
   string input;
-  cin >> input;
+  // cin >> input;
+  getline(cin, input);
+  fflush(stdin);
   return input;
 }
 
@@ -528,6 +530,7 @@ int main()
 
   string ban_ro, ban_ma, ban_dich;
   int chon;
+  fflush(stdin);
 
   do
   {
@@ -537,6 +540,7 @@ int main()
     cout << "|________________________________|\n";
     cout << "chon: ";
     cin >> chon;
+    fflush(stdin);
   } while (chon < 1 || chon > 2);
 
   switch (chon)
